@@ -1,24 +1,33 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
+import * as MediaLibrary from 'expo-media-library';
+import { Stack } from "expo-router";
 import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+import { useEffect } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import "../global.css";
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  // Request media library permissions on app startup
+  useEffect(() => {
+    const requestPermissions = async () => {
+      try {
+        const { status } = await MediaLibrary.getPermissionsAsync();
+        if (status !== 'granted') {
+          await MediaLibrary.requestPermissionsAsync();
+        }
+      } catch (error) {
+        console.error('Error requesting permissions:', error);
+      }
+    };
+
+    requestPermissions();
+  }, []);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+    <SafeAreaProvider>
+      <StatusBar backgroundColor="#6366f1" style="dark" />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
       </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    </SafeAreaProvider>
   );
 }

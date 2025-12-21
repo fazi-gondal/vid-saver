@@ -1,0 +1,52 @@
+workflows:
+  android-production-build:
+    name: Vid-Saver Production APK
+    max_build_duration: 60
+    instance_type: linux_x2
+    environment:
+      vars:
+        PACKAGE_NAME: "com.faizangondal.vidsaver"
+        APP_VERSION: "1.1.0"
+      node: 18
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: "main"
+          include: true
+          source: true
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm install
+
+      - name: Generate native Android project
+        script: |
+          npx expo prebuild --clean --platform android
+
+      - name: Build production APK (unsigned)
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: Rename APK
+        script: |
+          mkdir -p $CM_BUILD_OUTPUT_DIR
+          cp android/app/build/outputs/apk/release/app-release.apk \
+             $CM_BUILD_OUTPUT_DIR/vid-saver-v$APP_VERSION.apk
+
+          echo "✓ Production APK created successfully!"
+          echo "  File: vid-saver-v$APP_VERSION.apk"
+          echo "  Package: $PACKAGE_NAME"
+
+    artifacts:
+      - $CM_BUILD_OUTPUT_DIR/*.apk
+
+    publishing:
+      email:
+        recipients:
+          - faizangondal@example.com # Change to your email
+        notify:
+          success: true
+          failure: true
