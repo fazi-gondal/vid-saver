@@ -3,7 +3,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, Text, View } from 'react-native';
+import { FlatList, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { VideoListItem } from '../../components/VideoListItem';
 import { VideoPlayerModal } from '../../components/VideoPlayerModal';
@@ -34,28 +34,13 @@ export default function DownloadsScreen() {
     );
 
     const handleDelete = async (videoId: string) => {
-        Alert.alert(
-            "Delete Video",
-            "Are you sure you want to delete this video?",
-            [
-                {
-                    text: "Cancel",
-                    style: "cancel"
-                },
-                {
-                    text: "Delete",
-                    style: "destructive",
-                    onPress: async () => {
-                        try {
-                            await deleteVideo(videoId);
-                            await loadVideos();
-                        } catch (error) {
-                            // Optionally capture error
-                        }
-                    }
-                }
-            ]
-        );
+        try {
+            await deleteVideo(videoId);
+            await loadVideos();
+        } catch (error) {
+            // User likely denied permission or cancelled system dialog
+            console.log('Delete cancelled or failed', error);
+        }
     };
 
     const renderEmptyState = () => (

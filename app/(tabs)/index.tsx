@@ -8,7 +8,7 @@ import { DownloadProgress } from '../../components/DownloadProgress';
 import { Header } from '../../components/Header';
 import { VideoInput } from '../../components/VideoInput';
 import { VideoMetadataCard } from '../../components/VideoMetadataCard';
-import { ensureFolderPermission, saveVideo } from '../../services/storage';
+import { saveVideo } from '../../services/storage';
 import { downloadVideo, fetchVideoMetadata } from '../../services/videoDownloader';
 import { DownloadProgress as DownloadProgressType, VideoMetadata } from '../../types';
 import { extractUrlFromText, isValidVideoUrl } from '../../utils/urlValidator';
@@ -117,32 +117,6 @@ export default function HomeScreen() {
                 setVideoUrl('');
             }, 3000);
         } catch (error) {
-            // Handle SAF Permission Requirement (Production Flow)
-            if (error instanceof Error && error.message === 'PERMISSION_REQUIRED') {
-                setDownloadStatus('idle'); // Status: Idle (waiting for user)
-                Alert.alert(
-                    "Setup Storage",
-                    "Please select your **Downloads** folder.\n\nWe will automatically create a 'VidSaver' folder inside it for your videos! 📂",
-                    [
-                        { text: "Cancel", style: "cancel" },
-                        {
-                            text: "Select Downloads",
-                            onPress: async () => {
-                                const uri = await ensureFolderPermission();
-                                if (uri) {
-                                    // Permission granted, retry download automatically
-                                    handleDownload(downloadUrl, downloadMetadata);
-                                } else {
-                                    setErrorMessage("Folder selection cancelled");
-                                    setDownloadStatus('error');
-                                }
-                            }
-                        }
-                    ]
-                );
-                return;
-            }
-
             setDownloadStatus('error');
             setErrorMessage(error instanceof Error ? error.message : 'Download failed');
             // Keep error visible longer so user can retry

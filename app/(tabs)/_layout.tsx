@@ -24,7 +24,7 @@ export default function TabLayout() {
                     backgroundColor: 'transparent',
                     borderTopLeftRadius: 25,
                     borderTopRightRadius: 25,
-                    height: 55 + insets.bottom, // Reduced height for cleaner look
+                    height: 50 + insets.bottom, // Reduced height for cleaner look
                     borderTopWidth: 0,
                     shadowColor: '#000',
                     shadowOffset: {

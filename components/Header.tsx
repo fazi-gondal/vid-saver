@@ -12,7 +12,7 @@ export const Header = () => {
                 colors={['#6366f1', '#a855f7']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                className="px-6 rounded-b-[25px] overflow-hidden"
+                className="px-6 rounded-b-[32px] overflow-hidden"
                 style={{ paddingTop: insets.top + 10, paddingBottom: 24 }}
             >
                 <Text className="text-white text-3xl font-bold">Vid Saver</Text>
