@@ -1,5 +1,6 @@
 import Feather from '@expo/vector-icons/Feather';
-import * as Linking from 'expo-linking';
+import { useShareIntent } from 'expo-share-intent';
+import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,10 +8,10 @@ import { DownloadProgress } from '../../components/DownloadProgress';
 import { Header } from '../../components/Header';
 import { VideoInput } from '../../components/VideoInput';
 import { VideoMetadataCard } from '../../components/VideoMetadataCard';
-import { saveVideo } from '../../services/storage';
+import { ensureFolderPermission, saveVideo } from '../../services/storage';
 import { downloadVideo, fetchVideoMetadata } from '../../services/videoDownloader';
 import { DownloadProgress as DownloadProgressType, VideoMetadata } from '../../types';
-import { isValidVideoUrl } from '../../utils/urlValidator';
+import { extractUrlFromText, isValidVideoUrl } from '../../utils/urlValidator';
 
 export default function HomeScreen() {
     const [videoUrl, setVideoUrl] = useState('');
@@ -21,64 +22,71 @@ export default function HomeScreen() {
     const [downloadStatus, setDownloadStatus] = useState<'idle' | 'downloading' | 'completed' | 'error'>('idle');
     const [errorMessage, setErrorMessage] = useState('');
 
-    // Handle deep linking - when sharing from Instagram/TikTok
+    // Handle Share Intent
+    const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntent();
+
     useEffect(() => {
-        // Handle initial URL when app is opened via share
-        const handleInitialUrl = async () => {
-            const url = await Linking.getInitialURL();
-            if (url) {
-                processSharedUrl(url);
+        if (hasShareIntent) {
+            // Try to find a value from various possible properties
+            // @ts-ignore
+            const rawValue = shareIntent.value || shareIntent.url || shareIntent.text;
+
+            if (rawValue) {
+                const extractedUrl = extractUrlFromText(rawValue);
+                if (extractedUrl && isValidVideoUrl(extractedUrl)) {
+                    setVideoUrl(extractedUrl);
+                    setIsValidUrl(true);
+                    loadMetadata(extractedUrl, true); // <--- Enable Auto-Download
+                    resetShareIntent();
+                }
             }
-        };
-
-        handleInitialUrl();
-
-        // Listen for URL events while app is running
-        const subscription = Linking.addEventListener('url', ({ url }) => {
-            processSharedUrl(url);
-        });
-
-        return () => {
-            subscription.remove();
-        };
-    }, []);
-
-    // Process shared URL and auto-download
-    const processSharedUrl = async (incomingUrl: string) => {
-        // Extract actual video URL from the shared text
-        // Instagram/TikTok shares as text with URLs in it
-        let extractedUrl = incomingUrl;
-
-        // Check if it's a valid video URL
-        if (isValidVideoUrl(extractedUrl)) {
-            setVideoUrl(extractedUrl);
-            setIsValidUrl(true);
-            await loadMetadata(extractedUrl);
         }
-    };
+    }, [hasShareIntent, shareIntent, resetShareIntent]);
 
-    const handleUrlChange = async (url: string, isValid: boolean) => {
-        setVideoUrl(url);
-        setIsValidUrl(isValid);
+    // Cleanup previous Linking listener if needed, or keep for generic deep links
+    // For this feature, the hook handles the heavy lifting of "Shared Text" from Android/iOS.
+
+    const handleUrlChange = async (inputText: string, isValid: boolean) => {
+        // Try to extract a cleaner URL if the direct input is invalid but might contain one
+        // This handles cases where user pastes "Look at this https://..."
+        let effectiveUrl = inputText;
+        let effectiveIsValid = isValid;
+
+        if (!isValid && inputText.length > 5) {
+            const extracted = extractUrlFromText(inputText);
+            if (extracted && isValidVideoUrl(extracted)) {
+                effectiveUrl = extracted;
+                effectiveIsValid = true;
+            }
+        }
+
+        setVideoUrl(effectiveUrl);
+        setIsValidUrl(effectiveIsValid);
         setMetadata(null);
         setDownloadStatus('idle');
 
-        if (isValid) {
-            await loadMetadata(url);
+        if (effectiveIsValid) {
+            // Enable auto-download for manual input too
+            await loadMetadata(effectiveUrl, true);
         }
     };
 
-    const loadMetadata = async (url: string) => {
+    const loadMetadata = async (url: string, autoDownload: boolean = false) => {
         setIsLoadingMetadata(true);
+        setDownloadStatus('idle');
+        setErrorMessage('');
         try {
             const videoMetadata = await fetchVideoMetadata(url);
             setMetadata(videoMetadata);
 
-            // Wait 0.5 seconds before auto-starting download
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            // Auto-start download after delay
-            await handleDownload(url, videoMetadata);
+            if (autoDownload) {
+                // Small delay to ensure state updates or simply proceed
+                // Since we have the metadata object here, we can pass it directly to handleDownload
+                // avoiding async state issues.
+                setTimeout(() => {
+                    handleDownload(url, videoMetadata);
+                }, 500);
+            }
         } catch (error) {
             Alert.alert('Error', error instanceof Error ? error.message : 'Failed to load video information');
         } finally {
@@ -109,15 +117,41 @@ export default function HomeScreen() {
                 setVideoUrl('');
             }, 3000);
         } catch (error) {
+            // Handle SAF Permission Requirement (Production Flow)
+            if (error instanceof Error && error.message === 'PERMISSION_REQUIRED') {
+                setDownloadStatus('idle'); // Status: Idle (waiting for user)
+                Alert.alert(
+                    "Setup Storage",
+                    "Please select your **Downloads** folder.\n\nWe will automatically create a 'VidSaver' folder inside it for your videos! 📂",
+                    [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                            text: "Select Downloads",
+                            onPress: async () => {
+                                const uri = await ensureFolderPermission();
+                                if (uri) {
+                                    // Permission granted, retry download automatically
+                                    handleDownload(downloadUrl, downloadMetadata);
+                                } else {
+                                    setErrorMessage("Folder selection cancelled");
+                                    setDownloadStatus('error');
+                                }
+                            }
+                        }
+                    ]
+                );
+                return;
+            }
+
             setDownloadStatus('error');
             setErrorMessage(error instanceof Error ? error.message : 'Download failed');
             // Keep error visible longer so user can retry
-            // Don't auto-clear - user can retry or paste new URL
         }
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50" edges={['top', 'left', 'right']}>
+        <SafeAreaView className="flex-1 bg-neutral-50" edges={['left', 'right']}>
+            <StatusBar style="light" />
             <Header />
 
             <ScrollView className="flex-1">
@@ -125,7 +159,7 @@ export default function HomeScreen() {
 
                 {isLoadingMetadata && (
                     <View className="mx-6 my-4 items-center">
-                        <Text className="text-gray-600">Loading video information...</Text>
+                        <Text className="text-neutral-500">Loading video information...</Text>
                     </View>
                 )}
 
@@ -133,10 +167,20 @@ export default function HomeScreen() {
                     <>
                         <VideoMetadataCard metadata={metadata} />
 
+                        {downloadStatus === 'idle' && (
+                            <TouchableOpacity
+                                onPress={() => handleDownload()}
+                                className="mx-6 bg-primary-600 rounded-2xl py-4 flex-row items-center justify-center shadow-md active:bg-primary-700"
+                            >
+                                <Feather name="download" size={20} color="white" />
+                                <Text className="text-white font-bold text-lg ml-2">Download Video</Text>
+                            </TouchableOpacity>
+                        )}
+
                         {downloadStatus === 'error' && (
                             <TouchableOpacity
                                 onPress={() => handleDownload()}
-                                className="mx-6 bg-primary-600 rounded-xl py-4 flex-row items-center justify-center shadow-lg mt-4"
+                                className="mx-6 bg-error-600 rounded-2xl py-4 flex-row items-center justify-center shadow-md active:bg-error-700"
                             >
                                 <Feather name="refresh-cw" size={20} color="white" />
                                 <Text className="text-white font-bold text-lg ml-2">Retry Download</Text>
@@ -150,6 +194,8 @@ export default function HomeScreen() {
                     status={downloadStatus}
                     errorMessage={errorMessage}
                 />
+
+
             </ScrollView>
         </SafeAreaView>
     );

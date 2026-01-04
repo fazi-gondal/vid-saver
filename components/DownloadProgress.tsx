@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { Text, View } from 'react-native';
 import { DownloadProgress as DownloadProgressType } from '../types';
@@ -17,62 +18,55 @@ export const DownloadProgress: React.FC<DownloadProgressProps> = ({
         return null;
     }
 
-    const getStatusColor = () => {
-        switch (status) {
-            case 'downloading':
-                return 'bg-primary-600';
-            case 'completed':
-                return 'bg-green-600';
-            case 'error':
-                return 'bg-red-600';
-            default:
-                return 'bg-gray-400';
-        }
-    };
-
-    const getStatusText = () => {
-        switch (status) {
-            case 'downloading':
-                return 'Downloading...';
-            case 'completed':
-                return 'Download completed!';
-            case 'error':
-                return errorMessage || 'Download failed';
-            default:
-                return '';
-        }
-    };
-
     const percentage = progress?.percentage || 0;
 
+    const renderProgressBar = () => {
+        if (status === 'error') {
+            return (
+                <View className="h-2 bg-neutral-100 rounded-full overflow-hidden mt-2">
+                    <View className="h-full bg-error-500 w-full" />
+                </View>
+            );
+        }
+
+        return (
+            <View className="h-2 bg-neutral-100 rounded-full overflow-hidden mt-2">
+                {status === 'downloading' ? (
+                    <LinearGradient
+                        colors={['#6366f1', '#a855f7']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={{ width: `${percentage}%`, height: '100%' }}
+                    />
+                ) : (
+                    <View className={`h-full w-full ${status === 'completed' ? 'bg-success-500' : 'bg-neutral-300'}`} />
+                )}
+
+            </View>
+        );
+    };
+
     return (
-        <View className="mx-6 my-4 bg-white rounded-xl shadow-md p-4">
-            <View className="flex-row items-center justify-between mb-2">
-                <Text className="text-gray-700 font-semibold">{getStatusText()}</Text>
+        <View className="mx-6 mb-4 bg-white rounded-2xl shadow-sm border border-neutral-100 p-4">
+            <View className="flex-row items-center justify-between">
+                <Text className="text-neutral-900 font-semibold text-sm">
+                    {status === 'downloading' ? 'Downloading...' :
+                        status === 'completed' ? 'Download Complete!' :
+                            status === 'error' ? 'Download Failed' : ''}
+                </Text>
                 {status === 'downloading' && (
-                    <Text className="text-primary-600 font-bold">{Math.round(percentage)}%</Text>
+                    <Text className="text-primary-600 font-bold text-sm">{Math.round(percentage)}%</Text>
                 )}
             </View>
 
-            {status === 'downloading' && (
-                <View className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <View
-                        className={`h-full ${getStatusColor()} transition-all duration-300`}
-                        style={{ width: `${percentage}%` }}
-                    />
-                </View>
+            {renderProgressBar()}
+
+            {status === 'error' && (
+                <Text className="text-error-500 text-xs mt-2">{errorMessage}</Text>
             )}
 
             {status === 'completed' && (
-                <View className="mt-2">
-                    <Text className="text-green-600 text-sm">✓ Video saved to your gallery</Text>
-                </View>
-            )}
-
-            {status === 'error' && (
-                <View className="mt-2">
-                    <Text className="text-red-600 text-sm">✗ {errorMessage}</Text>
-                </View>
+                <Text className="text-success-600 text-xs mt-2">✓ Saved to gallery</Text>
             )}
         </View>
     );

@@ -3,8 +3,10 @@ export interface VideoMetadata {
     title: string;
     thumbnail: string;
     duration?: number;
-    platform: 'instagram' | 'tiktok';
+    platform: 'instagram' | 'tiktok' | 'youtube' | 'facebook' | 'twitter' | 'vimeo' | 'reddit' | 'other';
     author?: string;
+    uploader?: string;
+    filesize?: number;
 }
 
 export interface DownloadedVideo {
@@ -21,21 +23,29 @@ export interface DownloadProgress {
     percentage: number;
 }
 
-export interface ApiVideoResponse {
+// FastAPI Response Types
+export interface FastAPIMetadataResponse {
     success: boolean;
-    data?: {
-        title?: string;
-        description?: string;
-        thumbnail?: string;
-        cover?: string;
-        url?: string;
-        video?: string;
-        downloadUrl?: string;
-        author?: string;
-        username?: string;
-        medias?: Array<{ url: string; type?: string }>;
-        links?: string[];
-    } | any; // Allow any for flexibility with different API responses
+    data: {
+        title: string;
+        thumbnail: string;
+        duration: number;
+        uploader: string;
+        platform: string;
+        url: string;
+        filesize?: number;
+    };
     error?: string;
-    msg?: string; // Some errors return 'msg' instead of 'error'
 }
+
+export interface FastAPIDirectURLResponse {
+    success: boolean;
+    data: {
+        direct_url: string;
+        filename: string;
+        filesize: number;
+        expires_in: number;
+    };
+    error?: string;
+}
+

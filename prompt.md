@@ -4,7 +4,7 @@ Build a professional Instagram and TikTok video downloader app using React Nativ
 
 ## App Overview
 
-**Name:** Vid-Saver\
+**Name:** VidSaver\
 **Type:** React Native Expo App (Development Build)\
 **Purpose:** Download HD videos from Instagram and TikTok without watermarks\\
 
@@ -63,70 +63,21 @@ Build a professional Instagram and TikTok video downloader app using React Nativ
 
 ## API Configuration
 
-### Instagram Video Download
+### Unified Video Downloader
 
-**API:** RapidAPI - Social Media Video Downloader\
-**RapidAPI Link:** [Social Media Video Downloader](https://rapidapi.com/social-api1-instagram/api/social-media-video-downloader)\
-**Endpoint:** `https://social-media-video-downloader.p.rapidapi.com/instagram/v3/media/post/details`\
-**Method:** GET
+**Backend:** Custom FastAPI Backend
+**URL:** `https://fastapi-u8bm.onrender.com`
 
-**Headers:**
+**Endpoints:**
 
-```javascript
-{
-  'x-rapidapi-key': 'YOUR_API_KEY',
-  'x-rapidapi-host': 'social-media-video-downloader.p.rapidapi.com'
-}
-```
+* **Metadata:** `POST /api/metadata`
+  * Body: `{ "url": "https://..." }`
+  * Returns: `{ "success": true, "data": { "title": "...", "thumbnail": "...", ... } }`
+* **Direct URL:** `POST /api/get-direct-url`
+  * Body: `{ "url": "https://..." }`
+  * Returns: `{ "success": true, "data": { "direct_url": "...", "filename": "..." } }`
 
-**Query Parameters:**
-
-* `shortcode` (required): Extracted from Instagram URL using regex pattern `/(?:reel|p|tv)\/([A-Za-z0-9_-]+)/`
-  * Example: For `https://www.instagram.com/reel/DCviRy-TQqt/`, shortcode is `DCviRy-TQqt`
-* `renderableFormats` (optional): "720p,highres" - Specifies desired video quality
-
-**Response Structure:**
-
-```javascript
-{
-  // Metadata fetch response
-  title: string | caption: string,
-  thumbnail_url: string | cover_url: string | picture: string,
-  username: string | owner.username: string,
-  
-  // Video download response
-  contents: [{
-    videos: [{
-      url: string,      // Direct download URL
-      quality: string,  // Video quality (e.g., "720p", "1080p")
-      width: number,
-      height: number
-    }]
-  }]
-}
-```
-
-**Implementation Details:**
-
-1. Extract shortcode from URL using regex
-2. Make GET request to fetch metadata
-3. Parse response for thumbnail, title, and author
-4. For download, parse `contents[0].videos[0].url` for video URL
-5. Select highest quality available from videos array
-
-**Supported URL Formats:**
-
-* Posts: `https://www.instagram.com/p/SHORTCODE/`
-* Reels: `https://www.instagram.com/reel/SHORTCODE/`
-* IGTV: `https://www.instagram.com/tv/SHORTCODE/`
-
-### TikTok Video Download
-
-**API:** TikWM API (Free - No Authentication)\
-**Website:** [TikWM.com](https://www.tikwm.com/)\
-**Endpoint:** `https://www.tikwm.com/api/?url={videoUrl}?hd=1`\
-**Method:** GET\
-**No API Key Required**
+**No external API keys required.** The app communicates directly with this self-hosted backend.
 
 **Query Parameters:**
 
@@ -170,22 +121,24 @@ Build a professional Instagram and TikTok video downloader app using React Nativ
 
 ## Color Scheme
 
-**Primary Color:** `#6366f1` (Indigo-500)\
+**Primary Brand:** Gradient (`#6366f1` to `#a855f7`) - Indigo to Purple
+**Primary Color:** `#6366f1` (Indigo-500)
+
 **Primary Variants:**
 
 * primary-600: `#4f46e5`
 * primary-700: `#4338ca`
-* primary-100: Light background
+* primary-100: `#e0e7ff`
 
 **Status Bar:**
 
-* Background: `#6366f1`
-* Style: dark content
+* Background: `#6366f1` (matches header top)
+* Style: light content (white text)
 
 **Background:**
 
 * Main: `#f9fafb` (gray-50)
-* Cards: `#ffffff` (white)
+* Cards: `#ffffff` (white) with shadow-md
 
 ## App Features
 
@@ -234,6 +187,12 @@ import Feather from '@expo/vector-icons/Feather';
 
 ### 3. Bottom Tab Navigation
 
+**Style:** Modern Docked Floating Bar
+
+* **Appearance:** Rounded top corners (`rounded-t-[25px]`), absolute positioning bottom.
+* **Background:** Linear Gradient (`#6366f1` -> `#a855f7`).
+* **Icons:** White, optimized size (28px) with visual centering.
+
 **Tabs:**
 
 1. Home - `<Feather name="home" />`
@@ -266,9 +225,18 @@ Support patterns:
 
 ### Storage
 
-**Video Storage:** Device gallery (MediaLibrary)\
-**Metadata Storage:** Expo SecureStore (encrypted)\
-**File System:** expo-file-system/legacy
+**Video Storage:** Storage Access Framework (SAF)
+
+* User selects "Downloads" folder one time.
+* App auto-creates `.../Downloads/VidSaver/` subfolder.
+* Videos saved directly to this folder (no duplicates).
+
+**Metadata Storage:** Expo SecureStore (encrypted)
+**File System:** `expo-file-system` (standard)
+
+### Delete Safety
+
+**Mechanism:** Alert confirmation dialog "Are you sure?" before deletion.
 
 ### Permissions
 

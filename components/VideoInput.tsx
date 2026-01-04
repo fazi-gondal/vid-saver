@@ -1,3 +1,4 @@
+import Feather from '@expo/vector-icons/Feather';
 import * as Clipboard from 'expo-clipboard';
 import React, { useEffect, useState } from 'react';
 import { Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -17,6 +18,12 @@ export const VideoInput: React.FC<VideoInputProps> = ({ onUrlChange, initialUrl 
         checkClipboard();
     }, []);
 
+    useEffect(() => {
+        if (initialUrl !== url) {
+            setUrl(initialUrl);
+        }
+    }, [initialUrl]);
+
     const checkClipboard = async () => {
         try {
             const clipboardContent = await Clipboard.getStringAsync();
@@ -35,7 +42,7 @@ export const VideoInput: React.FC<VideoInputProps> = ({ onUrlChange, initialUrl 
         const isValid = isValidVideoUrl(text);
 
         if (text && !isValid) {
-            setError('Please enter a valid Instagram or TikTok URL');
+            setError('Please enter a valid video URL');
         } else {
             setError('');
         }
@@ -56,27 +63,40 @@ export const VideoInput: React.FC<VideoInputProps> = ({ onUrlChange, initialUrl 
 
     return (
         <View className="px-6 py-4">
-            <Text className="text-gray-700 font-semibold mb-2">Video URL</Text>
-            <View className="flex-row items-center">
-                <TextInput
-                    className="flex-1 bg-white border border-gray-300 rounded-l-lg px-4 py-3 text-gray-800"
-                    placeholder="Paste Instagram or TikTok link..."
-                    placeholderTextColor="#9ca3af"
-                    value={url}
-                    onChangeText={handleUrlChange}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                />
-                <TouchableOpacity
-                    onPress={handlePaste}
-                    className="bg-primary-600 px-4 py-3 rounded-r-lg"
-                >
-                    <Text className="text-white font-semibold">Paste</Text>
-                </TouchableOpacity>
+            <View className="space-y-2">
+                <Text className="text-neutral-700 text-sm font-medium ml-1">Video URL</Text>
+                <View className="flex-row items-center bg-neutral-50 border border-neutral-200 rounded-2xl px-4 py-2 focus:border-primary-500">
+                    <TouchableOpacity
+                        onPress={handlePaste}
+                        className="bg-primary-100 px-3 py-1.5 rounded-lg active:bg-primary-200 mr-3"
+                    >
+                        <Text className="text-primary-700 font-semibold text-xs">Paste</Text>
+                    </TouchableOpacity>
+                    <TextInput
+                        className="flex-1 text-base text-neutral-900 py-2"
+                        placeholder="Paste URL"
+                        placeholderTextColor="#9ca3af"
+                        value={url}
+                        onChangeText={handleUrlChange}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                    />
+                    {url.length > 0 && (
+                        <TouchableOpacity
+                            onPress={() => handleUrlChange('')}
+                            className="bg-neutral-200 p-1.5 rounded-full"
+                        >
+                            <Feather name="x" size={14} color="#4b5563" />
+                        </TouchableOpacity>
+                    )}
+                </View>
+                {error ? (
+                    <View className="flex-row items-center mt-1 ml-1">
+                        <Feather name="alert-circle" size={14} color="#ef4444" />
+                        <Text className="text-error-500 text-xs ml-1">{error}</Text>
+                    </View>
+                ) : null}
             </View>
-            {error ? (
-                <Text className="text-red-500 text-sm mt-2">{error}</Text>
-            ) : null}
         </View>
     );
 };

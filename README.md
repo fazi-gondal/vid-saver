@@ -1,4 +1,4 @@
-# Vid-Saver
+# VidSaver
 
 A powerful React Native mobile application for downloading videos from Instagram and TikTok. Built with Expo and featuring a beautiful, modern UI with auto-download capabilities.
 
@@ -8,39 +8,28 @@ A powerful React Native mobile application for downloading videos from Instagram
 
 * 📥 **Auto-Download**: Automatically downloads videos after fetching metadata
 * 📋 **Auto-Paste**: Detects video URLs from clipboard on app open
+* 📂 **Smart Storage**: Auto-creates `Downloads/VidSaver` folder for organized, duplicate-free saving
+* 🛡️ **Safety Check**: Confirmation dialog before deleting any video
 * 🔗 **Deep Linking**: Share videos directly from Instagram/TikTok to the app
-* 📱 **Instagram Support**: Download posts, reels, and IGTV videos
-* 🎵 **TikTok Support**: Download TikTok videos with high quality
-* 🎨 **Modern UI**: Beautiful interface with safe area support
-* 💾 **Local Storage**: All downloaded videos saved to device library
+* 🎨 **Modern UI**: Polished "Docked" Tab Bar, Gradient themes, and smooth animations
+* 📱 **Platform Support**: Works for Instagram, TikTok, Facebook, Twitter/X, and more
 * ⚡ **Progress Tracking**: Real-time download progress indicators
-* 🌙 **Dark Status Bar**: Optimized for better visibility
 
 ## 📱 Download
 
 Get the latest APK from [GitHub Releases](https://github.com/fazi-gondal/vid-saver/releases)
 
-## 🔑 API Requirements
+## 🔑 API Configuration
 
-### Instagram Downloads
+This app uses a custom high-performance **FastAPI Backend** to handle metadata fetching and direct download URL generation (bypassing CORS and rate limits).
 
-**⚠️ RapidAPI Key Required**
+### Backend URL
 
-This app requires your own RapidAPI key for Instagram video downloads:
+The app is pre-configured to use the hosted backend:
 
-1. Sign up at [RapidAPI](https://rapidapi.com)
-2. Subscribe to [Social Media Video Downloader API](https://rapidapi.com/emmanueldavidyou/api/social-media-video-downloader)
-3. Get your API key
-4. Update the API key in `services/videoDownloader.ts`:
-   ```typescript
-   const RAPIDAPI_KEY = 'YOUR_API_KEY_HERE';
-   ```
+* **URL:** `https://fastapi-u8bm.onrender.com`
 
-### TikTok Downloads
-
-**✅ Free API**
-
-TikTok downloads use the free [TikWM API](https://www.tikwm.com/api) - no API key required!
+No manual API key configuration is required for the user. The app automatically communicates with this service.
 
 ## 🚀 Getting Started
 
@@ -65,14 +54,12 @@ TikTok downloads use the free [TikWM API](https://www.tikwm.com/api) - no API ke
    npm install
    ```
 
-3. Configure your RapidAPI key (see API Requirements above)
-
-4. Start the development server:
+3. Start the development server:
    ```bash
    npx expo start
    ```
 
-5. Run on your device:
+4. Run on your device:
    * Press `a` for Android
    * Press `i` for iOS
    * Scan QR code with Expo Go app

@@ -1,4 +1,4 @@
-# Build Commands for Vid-Saver
+# Build Commands for VidSaver
 
 ## APK Builds (For Direct Installation)
 
